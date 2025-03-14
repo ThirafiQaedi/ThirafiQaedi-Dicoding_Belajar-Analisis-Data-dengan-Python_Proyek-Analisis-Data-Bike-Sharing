@@ -32,7 +32,7 @@ def Visualisasi_sewa_musim(data_df):
 def Visualisasi_korelasi(day_df):
     st.header("Menggunakan heatmap untuk visualisasi korelasi kondisi cuaca terhadap jumlah penyewaan sepeda")
     correlation = day_df[['temp', 'hum', 'windspeed', 'cnt']].corr()
-    correlation.columns = ['temperatur','humidity','windspeed','Total Jumlah']
+    correlation.columns = ['Temperatur','humidity','windspeed','Total Jumlah']
     correlation.index = ['Temperatur', 'Humidity', 'Windspeed', 'Total Jumlah']
     plt.figure(figsize=(8, 6))
     sns.heatmap(correlation, annot=True, cmap='coolwarm', fmt='.2f')
