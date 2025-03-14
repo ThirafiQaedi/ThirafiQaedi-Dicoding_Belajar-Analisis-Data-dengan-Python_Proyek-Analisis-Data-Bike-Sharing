@@ -28,14 +28,30 @@ with st.sidebar:
     # Rentang kecepatan angin
     windspeed_range = st.slider("Pilih Rentang Kecepatan Angin", float(day_df['windspeed'].min()), float(day_df['windspeed'].max()), (float(day_df['windspeed'].min()), float(day_df['windspeed'].max())))
 
+    # Rentang musim
+    season_range = st.multiselect("Pilih Musim", options=[1, 2, 3, 4], default=[1, 2, 3, 4], format_func=lambda x: ["Musim Semi", "Musim Panas", "Musim Gugur", "Musim Dingin"][x-1])
+    
+    # Rentang cuaca 
+    weather_options = {
+        1: "Cerah",
+        2: "Berkabut",
+        3: "Hujan Ringan",
+        4: "Hujan Berat/salju"
+    }
+    weather_range = st.multiselect(
+        "Pilih Jenis Cuaca",
+        options=list(weather_options.keys()),
+        default=list(weather_options.keys()),
+        format_func=lambda x: weather_options[x]
+    )
+
     # Rentang hari
     day_range = st.multiselect("Pilih Hari dalam Seminggu", options=[0, 1, 2, 3, 4, 5, 6], default=[0, 1, 2, 3, 4, 5, 6], format_func=lambda x: ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"][x])
 
     # Rentang jam
     hour_range = st.slider("Pilih Rentang Jam", 0, 23, (0, 23))
 
-    # Rentang musim
-    season_range = st.multiselect("Pilih Musim", options=[1, 2, 3, 4], default=[1, 2, 3, 4], format_func=lambda x: ["Musim Semi", "Musim Panas", "Musim Gugur", "Musim Dingin"][x-1])
+    
 
 
 # Filter data berdasarkan rentang yang dipilih
@@ -44,11 +60,15 @@ filtered_day_df = day_df[
     (day_df['hum'] >= hum_range[0]) & (day_df['hum'] <= hum_range[1]) &
     (day_df['windspeed'] >= windspeed_range[0]) & (day_df['windspeed'] <= windspeed_range[1]) &
     (day_df['season'].isin(season_range)) &
+    (day_df['weathersit'].isin(weather_range)) &
     (day_df['cnt'])
 ]
 
 # Filter data berdasarkan hari
-filtered_hour_df = hour_df[hour_df['weekday'].isin(day_range)]
+filtered_hour_df = hour_df[
+    hour_df['weekday'].isin(day_range) & 
+    (hour_df['hr'] >= hour_range[0]) & (hour_df['hr'] <= hour_range[1])
+]
 
 # 1. Visualisasi korelasi kondisi cuaca terhadap jumlah penyewaan sepeda Menggunakan heatmap 
 st.header("Menggunakan heatmap untuk visualisasi korelasi kondisi cuaca terhadap jumlah penyewaan sepeda")
@@ -63,12 +83,18 @@ st.pyplot(plt)
 st.header("Rata-rata Penyewaan Berdasarkan Jenis Cuaca ")
 weather_summary = filtered_day_df.groupby('weathersit')['cnt'].agg(['mean', 'sum', 'count']).reset_index()
 weather_summary.columns = ['Weather Situation', 'Average Rentals', 'Total Rentals', 'Days Count']
+weather_mapping = {
+    1: 'Cerah',
+    2: 'Berkabut',
+    3: 'Hujan Ringan',
+    4: 'Hujan Berat/salju',
+}
+weather_summary['Weather Situation'] = weather_summary['Weather Situation'].map(weather_mapping)
 plt.figure(figsize=(10, 5))
 sns.barplot(x='Weather Situation', y='Average Rentals', data=weather_summary, palette='viridis')
-plt.title('Rata-rata Penyewaan Berdasarkan Jenis Cuaca')
+plt.title('Rata-rata Penyewaan Berdasarkan Jenis Cuaca ')
 plt.xlabel('Jenis Cuaca')
 plt.ylabel('Rata-rata Penyewaan')
-plt.xticks(ticks=[0, 1, 2, 3], labels=['Cerah', 'Berkabut', 'Hujan Ringan', 'Hujan Berat/salju'])
 st.pyplot(plt)
 
 # 3. jumlah penyewaan sepeda berdasarkan hari dalam seminggu dan jam dalam sehari
@@ -76,23 +102,59 @@ st.header("penyewaan sepeda berdasarkan hari dalam seminggu dan jam dalam sehari
 # 3. Visualisasi Jumlah Penyewaan Berdasarkan Hari dalam Seminggu
 daily_rentals = filtered_hour_df.groupby('weekday')['cnt'].sum().reset_index()
 daily_rentals.columns = ['Day of Week', 'Total Rentals']
+day_mapping = {
+    0: 'Senin',
+    1: 'Selasa',
+    2: 'Rabu',
+    3: 'Kamis',
+    4: 'Jumat',
+    5: 'Sabtu',
+    6: 'Minggu'
+}
+daily_rentals['Day of Week'] = daily_rentals['Day of Week'].map(day_mapping)
 plt.figure(figsize=(10, 5))
 sns.barplot(x='Day of Week', y='Total Rentals', data=daily_rentals, palette='Blues')
 plt.title('Jumlah Penyewaan Berdasarkan Hari dalam Seminggu')
 plt.xlabel('Hari dalam Seminggu')
 plt.ylabel('Total Penyewaan')
-plt.xticks(ticks=[0, 1, 2, 3, 4, 5, 6], labels=["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"])
 st.pyplot(plt)
 
 # 3. Visualisasi Jumlah Penyewaan Berdasarkan Jam dalam Sehari
+# Menghitung jumlah penyewaan berdasarkan jam
 hourly_rentals = filtered_hour_df.groupby('hr')['cnt'].sum().reset_index()
 hourly_rentals.columns = ['Hour', 'Total Rentals']
+Hour_mapping = {
+    0: '0',
+    1: '1',
+    2: '2',
+    3: '3',
+    4: '4' ,
+    5: '5',
+    6: '6',
+    7: '7',
+    8: '8',
+    9: '9',
+    10: '10',
+    11: '11',
+    12: '12',
+    13: '13',
+    14: '14',
+    15: '15',
+    16: '16',
+    17: '17',
+    18: '18',
+    19: '19',
+    20: '20',
+    21: '21',
+    22: '22',
+    23: '23'  
+}
+hourly_rentals['Hour'] = hourly_rentals['Hour'].map(Hour_mapping)
 plt.figure(figsize=(10, 5))
 sns.lineplot(x='Hour', y='Total Rentals', data=hourly_rentals, marker='o')
 plt.title('Jumlah Penyewaan Berdasarkan Jam dalam Sehari')
 plt.xlabel('Jam dalam Sehari')
 plt.ylabel('Total Penyewaan')
-plt.xticks(range(0, 24))
 plt.grid()
 st.pyplot(plt)
 
@@ -100,12 +162,18 @@ st.pyplot(plt)
 st.header("Jumlah Penyewaan Berdasarkan Musim")
 seasonal_rentals = filtered_day_df.groupby('season')['cnt'].agg(['mean', 'sum', 'count']).reset_index()
 seasonal_rentals.columns = ['Season', 'Average Rentals', 'Total Rentals', 'Days Count']
+Season_mapping = {
+    1: 'Musim Semi',
+    2: 'Musim Panas',
+    3: 'Hujan Musim Gugur',
+    4: 'Musim Dingin'
+}
+seasonal_rentals['Season'] = seasonal_rentals['Season'].map(Season_mapping)
 plt.figure(figsize=(10, 5))
 sns.barplot(x='Season', y='Average Rentals', data=seasonal_rentals, palette='Set2')
-plt.title('Jumlah Penyewaan Berdasarkan Musim')
+plt.title('Jumlah Penyewaan Berdasarkan Musim ')
 plt.xlabel('Musim')
 plt.ylabel('Rata-rata Penyewaan')
-plt.xticks(ticks=[0, 1, 2, 3], labels=['Musim Semi', 'Musim Panas', 'Musim Gugur', 'Musim Dingin'])
 st.pyplot(plt)
 
 # Insight dan Kesimpulan
