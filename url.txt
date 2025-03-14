@@ -1,1 +1,1 @@
-https://mhdthrpy-23jv7bjqiruuszmqd8buuu.streamlit.app/
+https://thrdataanalysisdashboard.streamlit.app/
